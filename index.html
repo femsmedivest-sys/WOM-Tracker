@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Order Management Tracker - Google Sheets</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-clipboard-list"></i>
+                <h1>Work Order Tracker <span class="api-badge">Google Sheets</span></h1>
+            </div>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">Total WO</span>
+                    <span class="stat-value" id="totalCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Pending</span>
+                    <span class="stat-value open-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Last Sync</span>
+                    <span class="stat-value" id="lastSync">-</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Connection Status -->
+        <div id="connectionStatus" class="connection-status">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <span id="statusText">Connecting to Google Sheets...</span>
+            <button id="manualSync" class="btn-sync">
+                <i class="fas fa-sync-alt"></i> Sync Now
+            </button>
+        </div>
+
+        <!-- Filter Panel -->
+        <div class="filter-panel">
+            <h2><i class="fas fa-filter"></i> Filters</h2>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="hospitalFilter"><i class="fas fa-hospital"></i> Hospital</label>
+                    <select id="hospitalFilter" class="filter-select">
+                        <option value="all">All Hospitals</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="yearFilter"><i class="fas fa-calendar-alt"></i> Year</label>
+                    <select id="yearFilter" class="filter-select">
+                        <option value="all">All Years</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="monthFilter"><i class="fas fa-calendar"></i> Month</label>
+                    <select id="monthFilter" class="filter-select">
+                        <option value="all">All Months</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="serviceFilter"><i class="fas fa-tools"></i> Service</label>
+                    <select id="serviceFilter" class="filter-select">
+                        <option value="all">All Services</option>
+                    </select>
+                </div>
+                
+                <button id="resetFilters" class="btn-reset">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-container">
+            <div class="table-header">
+                <h3><i class="fas fa-table"></i> Work Orders <small id="filterInfo">(Showing all)</small></h3>
+                <div class="table-actions">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search work orders...">
+                    </div>
+                    <div class="export-buttons">
+                        <button id="exportCSV" class="btn-export" title="Export to CSV">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </button>
+                        <button id="refreshData" class="btn-refresh">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Loading work orders from Google Sheets...</p>
+                <p class="loading-sub">Please wait while we fetch the latest data</p>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="error-message" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div class="error-content">
+                    <h4>Failed to load data</h4>
+                    <p id="errorText">Unable to connect to Google Sheets. Please check your connection.</p>
+                    <button id="retryButton" class="btn-retry">
+                        <i class="fas fa-redo"></i> Retry
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive">
+                <table id="workOrderTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Request No</th>
+                            <th>Hospital</th>
+                            <th>Date</th>
+                            <th>Services</th>
+                            <th>Sub-System</th>
+                            <th>Action Plan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Data akan diisi oleh JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- No Data Message -->
+            <div id="noDataMessage" class="no-data" style="display: none;">
+                <i class="fas fa-database"></i>
+                <h4>No Work Orders Found</h4>
+                <p>Try adjusting your filters or search criteria</p>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <div class="pagination-info">
+                    Showing <span id="showingFrom">0</span>-<span id="showingTo">0</span> of <span id="totalItems">0</span> work orders
+                </div>
+                <div class="pagination-controls">
+                    <button id="prevBtn" class="btn-pagination" disabled>
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    <span id="pageInfo">Page 1 of 1</span>
+                    <button id="nextBtn" class="btn-pagination" disabled>
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal untuk Add Action Plan -->
+        <div id="actionPlanModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-edit"></i> Update Action Plan</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-info">
+                        <div class="info-row">
+                            <span class="info-label">Request No:</span>
+                            <span class="info-value" id="modalRequestNo">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Hospital:</span>
+                            <span class="info-value" id="modalHospital">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Date:</span>
+                            <span class="info-value" id="modalDate">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Service:</span>
+                            <span class="info-value" id="modalService">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="actionPlanText"><i class="fas fa-clipboard"></i> Action Plan:</label>
+                        <textarea id="actionPlanText" rows="6" placeholder="Enter action plan details..."></textarea>
+                        <div class="char-count">
+                            <span id="charCount">0</span> characters
+                        </div>
+                    </div>
+                    
+                    <div class="modal-note">
+                        <i class="fas fa-info-circle"></i>
+                        This action plan will be saved directly to your Google Sheet
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button id="cancelBtn" class="btn-cancel">Cancel</button>
+                        <button id="saveActionPlanBtn" class="btn-save">
+                            <i class="fas fa-save"></i> Save to Google Sheet
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="toast">
+            <div class="toast-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="toast-content">
+                <div class="toast-title" id="toastTitle"></div>
+                <div class="toast-message" id="toastMessage"></div>
+            </div>
+            <button class="toast-close">&times;</button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>
+                    <i class="fas fa-sync"></i> 
+                    Data synced with Google Sheets | 
+                    <span id="recordCount">0</span> records loaded
+                </p>
+                <p class="footer-note">
+                    Changes are saved directly to your spreadsheet in real-time
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
