@@ -1,7 +1,7 @@
 // script.js - Google Apps Script Integration
 
 // =================== CONFIGURATION ===================
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxv55dcZRWmBJLmYnX_OYINEYr8e_kZyBebhPiOgzkYA6tGCY8cGrElS9YG_lxHU6j5Rw/exec'; // Ganti dengan URL Web App Anda
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw7Jon1jycLLK64AuQg9LQbjlX0jWADzhUEAbBVPBXCGNCf0Sf7L4FOKHavuHBcmB6LqA/exec'; // Ganti dengan URL Web App Anda
 
 // Jika menggunakan mode development, bisa pakai URL lokal untuk testing
 // const APPS_SCRIPT_URL = 'http://localhost:3000/mock-api'; // Untuk testing
